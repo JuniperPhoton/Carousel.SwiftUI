@@ -50,8 +50,8 @@ public class CarouselController: ObservableObject {
     }
     
     public func stopAnimation() {
-        displayLink?.remove(from: .current, forMode: .default)
-        displayLink?.isPaused = false
+        displayLink?.isPaused = true
+        displayLink?.invalidate()
         timerStarted = false
     }
 }
