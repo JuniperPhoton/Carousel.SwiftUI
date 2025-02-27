@@ -70,11 +70,14 @@ public struct VCarouselLayout: Layout {
     /// to tick the progress value.
     public private(set) var progress: CGFloat = 0
     
+    var idealSize: Binding<CGSize>
+
     /// Construct the ``VCarouselLayout`` with initial progress.
     ///
     /// See ``VCarouselLayout/progress`` for more information.
-    public init(progress: CGFloat) {
+    public init(progress: CGFloat, idealSize: Binding<CGSize> = .constant(.zero)) {
         self.progress = progress
+        self.idealSize = idealSize
     }
     
     public func sizeThatFits(
@@ -88,6 +91,11 @@ public struct VCarouselLayout: Layout {
         
         let firstViewSize = sizeThatFits(proposal: proposal, subviews: subviews.suffix(1))
         let maxSize = sizeThatFits(proposal: proposal, subviews: subviews)
+        
+        if maxSize.width > 0 && maxSize.height > 0 {
+            idealSize.wrappedValue = maxSize
+            print("dwccc idealSize set to \(maxSize), for proposal \(proposal)")
+        }
         
         let resolvedProposal = proposal.replacingUnspecifiedDimensions()
         return CGSize(

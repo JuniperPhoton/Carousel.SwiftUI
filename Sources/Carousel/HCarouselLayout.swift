@@ -11,9 +11,11 @@ import SwiftUI
 /// See the comments of ``VCarouselLayout`` for more information.
 public struct HCarouselLayout: Layout {
     var progress: CGFloat = 0
+    var idealSize: Binding<CGSize>
     
-    public init(progress: CGFloat) {
+    public init(progress: CGFloat, idealSize: Binding<CGSize> = .constant(.zero)) {
         self.progress = progress
+        self.idealSize = idealSize
     }
     
     public func sizeThatFits(
@@ -27,6 +29,11 @@ public struct HCarouselLayout: Layout {
         
         let firstViewSize = sizeThatFits(proposal: proposal, subviews: subviews.suffix(1))
         let maxSize = sizeThatFits(proposal: proposal, subviews: subviews)
+        
+        if maxSize.width > 0 && maxSize.height > 0 {
+            idealSize.wrappedValue = maxSize
+            print("dwccc idealSize set to \(maxSize), for proposal \(proposal)")
+        }
         
         let resolvedProposal = proposal.replacingUnspecifiedDimensions()
         return CGSize(

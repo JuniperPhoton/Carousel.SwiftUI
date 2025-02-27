@@ -27,11 +27,25 @@ class ViewModel: ObservableObject {
     @Published var horizontalLayout = true
     @Published var images: [ImageData] = [
         ImageData(id: "0", image: .image0),
-        ImageData(id: "1", image: .image1),
+        ImageData(id: "1", image: .carouselImage1),
         ImageData(id: "2", image: .image2),
-        ImageData(id: "3", image: .image3),
+        ImageData(id: "3", image: .carouselImage2),
         ImageData(id: "4", image: .image4),
+        ImageData(id: "5", image: .carouselImage3),
+        ImageData(id: "6", image: .image1),
+        ImageData(id: "7", image: .carouselImage4),
+        ImageData(id: "8", image: .image3),
+        ImageData(id: "9", image: .carouselImage5),
+        ImageData(id: "10", image: .carouselImage6),
+        ImageData(id: "11", image: .carouselImage7),
+        ImageData(id: "12", image: .carouselImage8),
+        ImageData(id: "13", image: .carouselImage9),
+        ImageData(id: "14", image: .carouselImage10),
     ]
+    
+    var isLeadingTouching = false
+    var isCenterTouching = false
+    var isTrailingTouching = false
     
     private var timer: Timer?
     
@@ -40,10 +54,20 @@ class ViewModel: ObservableObject {
         
         let delta = 0.0002
         
-        self.timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 120.0, repeats: true) { _ in
-            self.leadingProgress -= delta
-            self.centerProgress += delta
-            self.trailingProgress -= delta
+        self.timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 120.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            
+            if !isLeadingTouching {
+                self.leadingProgress -= delta
+            }
+            
+            if !isCenterTouching {
+                self.centerProgress += delta
+            }
+            
+            if !isTrailingTouching {
+                self.trailingProgress -= delta
+            }
         }
         
         self.timerStarted = true
@@ -58,72 +82,7 @@ class ViewModel: ObservableObject {
 
 public struct CarouselDemoView: View {
     public var body: some View {
-        TabView {
-            PhotoWallDemo()
-                .tabItem {
-                    Text("Photo wall")
-                }
-            
-            SwitchLayoutDemo()
-                .tabItem {
-                    Text("Switch layout")
-                }
-        }
-    }
-}
-
-private struct SwitchLayoutDemo: View {
-    @StateObject private var viewModel = ViewModel()
-    
-    var body: some View {
-        VStack {
-            CarouselView(
-                orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                progress: viewModel.leadingProgress
-            ) {
-                forEachContentView
-            }
-            .frame(maxHeight: .infinity)
-            .ignoresSafeArea()
-            
-            HStack {
-                Button(viewModel.timerStarted ? "Stop Carousel" : "Start Carousel") {
-                    if !viewModel.timerStarted {
-                        viewModel.fireTimer()
-                    } else {
-                        viewModel.stopTimer()
-                    }
-                }
-                .fixedSize()
-                
-                Button(viewModel.horizontalLayout ? "Horizontal" : "Vertical") {
-                    withAnimation {
-                        viewModel.horizontalLayout.toggle()
-                    }
-                }
-                .fixedSize()
-            }.buttonStyle(.bordered)
-                .controlSize(.large)
-                .padding()
-        }
-    }
-    
-    private var layout: AnyLayout {
-        if viewModel.horizontalLayout {
-            AnyLayout(HCarouselLayout(progress: viewModel.leadingProgress))
-        } else {
-            AnyLayout(VCarouselLayout(progress: viewModel.leadingProgress))
-        }
-    }
-    
-    private var forEachContentView: some View {
-        ForEach(viewModel.images) { image in
-            Image(image.image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 200)
-                .padding(4)
-        }
+        PhotoWallDemo()
     }
 }
 
@@ -135,25 +94,31 @@ private struct PhotoWallDemo: View {
             rootLayout {
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: viewModel.leadingProgress
-                ) {
+                    progress: $viewModel.leadingProgress
+                ) { isTouching in
+                    viewModel.isLeadingTouching = isTouching
+                } content: {
                     forEachContentView
                 }
                 
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: viewModel.centerProgress
-                ) {
+                    progress: $viewModel.centerProgress
+                ) { isTouching in
+                    viewModel.isCenterTouching = isTouching
+                } content: {
                     forEachContentView
                 }
                 
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: viewModel.trailingProgress
-                ) {
+                    progress: $viewModel.trailingProgress
+                ) { isTouching in
+                    viewModel.isTrailingTouching = isTouching
+                } content: {
                     forEachContentView
                 }
-            }.clipped()
+            }.ignoresSafeArea()
                 .frame(maxHeight: .infinity).overlay {
                     Rectangle().fill(
                         LinearGradient(
@@ -163,6 +128,7 @@ private struct PhotoWallDemo: View {
                         )
                     ).frame(height: 100)
                         .frame(maxHeight: .infinity, alignment: .bottom)
+                        .ignoresSafeArea()
                     
                     HStack {
                         Button(viewModel.timerStarted ? "Stop Carousel" : "Start Carousel") {
@@ -181,7 +147,7 @@ private struct PhotoWallDemo: View {
                         }
                         .fixedSize()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .padding()
                     .frame(maxHeight: .infinity, alignment: .bottom)
@@ -202,8 +168,9 @@ private struct PhotoWallDemo: View {
             Image(image.image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 200)
-                .padding(4)
+                .contentShape(Rectangle())
+                .clipped()
+                .padding(2)
         }
     }
 }
