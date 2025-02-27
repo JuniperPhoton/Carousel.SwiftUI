@@ -13,7 +13,7 @@ import SwiftUI
 /// ```swift
 /// CarouselView(
 ///     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-///     progress: viewModel.leadingProgress
+///     offset: viewModel.leadingOffset
 /// ) {
 ///     ForEach(0..<assets.count) { index in
 ///         Image(assets[index].resource)
@@ -185,6 +185,7 @@ class ValueAnimator {
     
     func start() {
 #if os(macOS)
+        // todo fix: on macOS, the update will still be called after cancelling.
         let displayLink = NSApplication.shared.keyWindow?.displayLink(target: self, selector: #selector(update))
         displayLink?.add(to: .main, forMode: .default)
 #else

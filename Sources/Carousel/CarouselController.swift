@@ -7,26 +7,26 @@
 import Foundation
 import SwiftUI
 
-/// A helper controller to control the progress of the ``HCarouselLayout`` and ``VCarouselLayout``.
+/// A helper controller to control the offset of the ``HCarouselLayout`` and ``VCarouselLayout``.
 ///
 /// You use ``startAnimation()`` and ``stopAnimation()`` to control the animation.
 public class CarouselController: ObservableObject {
     public static let defaultDeltaOffset: CGFloat = 0.2
     
-    /// The observer can observe the progress of the animation.
+    /// The observer can observe the offset (in points) of the animation.
     @Published public var offset: CGFloat
     
     /// Check if the animation is started.
     @Published public var timerStarted: Bool = false
     
-    /// The delta progress of the animation.
+    /// The delta offset of the animation.
     /// You can use ``CarouselController/defaultDeltaOffset`` as the default value, or change it to your own value
     /// in runtime.
     public var deltaOffset: CGFloat
     
     private var displayLink: CADisplayLink?
     
-    /// Construct the ``CarouselController`` with initial progress and delta progress.
+    /// Construct the ``CarouselController`` with initial offset and delta offset.
     public init(offset: CGFloat = 0.0, deltaOffset: CGFloat = CarouselController.defaultDeltaOffset) {
         self.offset = offset
         self.deltaOffset = deltaOffset
