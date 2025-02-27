@@ -77,11 +77,14 @@ private struct SwitchLayoutDemo: View {
     
     var body: some View {
         VStack {
-            layout {
+            CarouselView(
+                orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
+                progress: viewModel.leadingProgress
+            ) {
                 forEachContentView
-            }.clipped()
-                .frame(maxHeight: .infinity)
-                .ignoresSafeArea()
+            }
+            .frame(maxHeight: .infinity)
+            .ignoresSafeArea()
             
             HStack {
                 Button(viewModel.timerStarted ? "Stop Carousel" : "Start Carousel") {
@@ -130,15 +133,24 @@ private struct PhotoWallDemo: View {
     var body: some View {
         VStack {
             rootLayout {
-                leadingLayout {
+                CarouselView(
+                    orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
+                    progress: viewModel.leadingProgress
+                ) {
                     forEachContentView
                 }
                 
-                centerLayout {
+                CarouselView(
+                    orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
+                    progress: viewModel.centerProgress
+                ) {
                     forEachContentView
                 }
                 
-                trailingLayout {
+                CarouselView(
+                    orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
+                    progress: viewModel.trailingProgress
+                ) {
                     forEachContentView
                 }
             }.clipped()
@@ -182,30 +194,6 @@ private struct PhotoWallDemo: View {
             AnyLayout(VStackLayout(spacing: 0))
         } else {
             AnyLayout(HStackLayout(spacing: 0))
-        }
-    }
-    
-    private var leadingLayout: AnyLayout {
-        if viewModel.horizontalLayout {
-            return AnyLayout(HCarouselLayout(progress: viewModel.leadingProgress))
-        } else {
-            return AnyLayout(VCarouselLayout(progress: viewModel.leadingProgress))
-        }
-    }
-    
-    private var centerLayout: AnyLayout {
-        if viewModel.horizontalLayout {
-            return AnyLayout(HCarouselLayout(progress: viewModel.centerProgress))
-        } else {
-            return AnyLayout(VCarouselLayout(progress: viewModel.centerProgress))
-        }
-    }
-    
-    private var trailingLayout: AnyLayout {
-        if viewModel.horizontalLayout {
-            return AnyLayout(HCarouselLayout(progress: viewModel.trailingProgress))
-        } else {
-            return AnyLayout(VCarouselLayout(progress: viewModel.trailingProgress))
         }
     }
     
