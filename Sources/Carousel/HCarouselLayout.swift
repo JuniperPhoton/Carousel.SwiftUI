@@ -31,7 +31,7 @@ public struct HCarouselLayout: Layout {
         let resolvedProposal = proposal.replacingUnspecifiedDimensions()
         return CGSize(
             width: min(maxSize.width, resolvedProposal.width),
-            height: maxSize.height,
+            height: maxSize.height
         )
     }
     

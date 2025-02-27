@@ -92,7 +92,7 @@ public struct VCarouselLayout: Layout {
         let resolvedProposal = proposal.replacingUnspecifiedDimensions()
         return CGSize(
             width: maxSize.width,
-            height: min(maxSize.height, resolvedProposal.height),
+            height: min(maxSize.height, resolvedProposal.height)
         )
     }
     
