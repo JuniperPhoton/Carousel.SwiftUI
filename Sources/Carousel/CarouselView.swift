@@ -29,10 +29,11 @@ public struct CarouselView<Content: View>: View {
     /// The orientation of the carousel.
     var orientation: Axis
     
-    /// See ``VCarouselLayout/progress``.
-    var progress: Binding<CGFloat>
+    /// See ``VCarouselLayout/offset``.
+    var offset: Binding<CGFloat>
     
-    var onTouchStateChanged: (Bool) -> Void
+    var enableDragging: Bool = false
+    var onDragStateChanged: ((DragState) -> Void)?
     
     @ViewBuilder
     var content: () -> Content
@@ -41,64 +42,77 @@ public struct CarouselView<Content: View>: View {
     
     private var gesture: some Gesture {
         DragGesture().onChanged { value in
-            if gestureState.dragStartedProgress == nil {
-                gestureState.dragStartedProgress = progress.wrappedValue
+            if gestureState.dragStartedOffset == nil {
+                gestureState.dragStartedOffset = offset.wrappedValue
             }
             gestureState.dragTranslation = value.translation
-            onTouchStateChanged(true)
+            onDragStateChanged?(DragState(isDragging: true, isEnding: false))
         }.onEnded { value in
-            let predictedEndTranslation = value.predictedEndTranslation
-            if orientation == .horizontal, gestureState.idealSize.width > 0, let startProgress = gestureState.dragStartedProgress {
-                let time = (predictedEndTranslation.width - value.translation.width) / value.velocity.width
-                gestureState.timerToSet(
-                    target: startProgress - predictedEndTranslation.width * gestureState.horizontalProgressPerPoint,
-                    time: time * 3,
-                    progress: progress
-                )
-                onTouchStateChanged(true)
-                DispatchQueue.main.asyncAfter(deadline: .now() + time * 3) {
-                    onTouchStateChanged(false)
-                }
-            } else if orientation == .vertical, gestureState.idealSize.height > 0, let startProgress = gestureState.dragStartedProgress {
-                let time = (predictedEndTranslation.height - value.translation.height) / value.velocity.height
-                gestureState.timerToSet(
-                    target: startProgress - predictedEndTranslation.height * gestureState.verticalProgressPerPoint,
-                    time: time * 3,
-                    progress: progress
-                )
-                onTouchStateChanged(true)
-                DispatchQueue.main.asyncAfter(deadline: .now() + time * 3) {
-                    onTouchStateChanged(false)
+            if let dragStartedOffset = gestureState.dragStartedOffset {
+                let predictedEndTranslation = value.predictedEndTranslation
+
+                switch orientation {
+                case .horizontal:
+                    let time = (predictedEndTranslation.width - value.translation.width) / value.velocity.width
+                    onDragStateChanged?(DragState(isDragging: false, isEnding: true))
+                    gestureState.animating = true
+                    gestureState.timerToSet(
+                        start: offset.wrappedValue,
+                        dest: dragStartedOffset - predictedEndTranslation.width,
+                        time: time * 3
+                    ) { value in
+                        offset.wrappedValue = value
+                    } onCancel: {
+                        gestureState.animating = false
+                        onDragStateChanged?(.inactive)
+                    }
+                case .vertical:
+                    let time = (predictedEndTranslation.height - value.translation.height) / value.velocity.height
+                    onDragStateChanged?(DragState(isDragging: false, isEnding: true))
+                    gestureState.animating = true
+                    gestureState.timerToSet(
+                        start: offset.wrappedValue,
+                        dest: dragStartedOffset - predictedEndTranslation.height,
+                        time: time * 3
+                    ) { value in
+                        offset.wrappedValue = value
+                    } onCancel: {
+                        gestureState.animating = false
+                        onDragStateChanged?(.inactive)
+                    }
                 }
             }
-            gestureState.dragStartedProgress = nil
+            
+            gestureState.dragStartedOffset = nil
         }
     }
     
     public init(
         orientation: Axis,
-        progress: Binding<CGFloat>,
-        onTouchStateChanged: @escaping (Bool) -> Void,
+        offset: Binding<CGFloat>,
+        enableDragging: Bool = false,
+        onDragStateChanged: ((DragState) -> Void)? = nil,
         content: @escaping () -> Content
     ) {
         self.orientation = orientation
-        self.progress = progress
-        self.onTouchStateChanged = onTouchStateChanged
+        self.offset = offset
+        self.onDragStateChanged = onDragStateChanged
+        self.enableDragging = enableDragging
         self.content = content
     }
     
     public var body: some View {
         layout {
             content()
-        }.gesture(gesture)
+        }.gesture(gesture, including: enableDragging && !gestureState.animating ? .all : .none)
             .onChange(of: gestureState.dragTranslation.width) { newValue in
-                if orientation == .horizontal, gestureState.idealSize.width > 0, let startProgress = gestureState.dragStartedProgress {
-                    progress.wrappedValue = startProgress - newValue * gestureState.horizontalProgressPerPoint
+                if orientation == .horizontal, let dragStartedOffset = gestureState.dragStartedOffset {
+                    offset.wrappedValue = dragStartedOffset - newValue
                 }
             }
             .onChange(of: gestureState.dragTranslation.height) { newValue in
-                if orientation == .vertical, gestureState.idealSize.height > 0, let startProgress = gestureState.dragStartedProgress {
-                    progress.wrappedValue = startProgress - newValue * gestureState.verticalProgressPerPoint
+                if orientation == .vertical, let dragStartedOffset = gestureState.dragStartedOffset {
+                    offset.wrappedValue = dragStartedOffset - newValue
                 }
             }
     }
@@ -106,49 +120,33 @@ public struct CarouselView<Content: View>: View {
     private var layout: AnyLayout {
         switch orientation {
         case .horizontal:
-            AnyLayout(HCarouselLayout(progress: progress.wrappedValue, idealSize: Binding(get: {
-                .zero
-            }, set: { value in
-                gestureState.idealSize = value
-            })))
+            AnyLayout(HCarouselLayout(offset: offset.wrappedValue))
         case .vertical:
-            AnyLayout(VCarouselLayout(progress: progress.wrappedValue, idealSize: Binding(get: {
-                .zero
-            }, set: { value in
-                gestureState.idealSize = value
-            })))
+            AnyLayout(VCarouselLayout(offset: offset.wrappedValue))
         }
     }
 }
 
 private class GestureState: ObservableObject {
-    var startLocation: CGPoint? = nil
-    var dragStartedProgress: CGFloat? = nil
-    var idealSize: CGSize = .zero
     @Published var dragTranslation: CGSize = .zero
+    @Published var animating = false
     
-    var horizontalProgressPerPoint: CGFloat {
-        if idealSize.width > 0 {
-            1.0 / idealSize.width
-        } else {
-            0.0
-        }
-    }
-    
-    var verticalProgressPerPoint: CGFloat {
-        if idealSize.height > 0 {
-            1.0 / idealSize.height
-        } else {
-            0.0
-        }
-    }
+    var dragStartedOffset: CGFloat? = nil
     
     private var animator: ValueAnimator?
     
-    func timerToSet(target: CGFloat, time: TimeInterval, progress: Binding<CGFloat>) {
-        animator?.cancel()
-        animator = ValueAnimator(from: progress.wrappedValue, to: target, duration: time) { value in
-            progress.wrappedValue = CGFloat(value)
+    func timerToSet(
+        start: CGFloat,
+        dest: CGFloat,
+        time: TimeInterval,
+        onUpdateValue: @escaping (CGFloat) -> Void,
+        onCancel: (() -> Void)? = nil
+    ) {
+        animator = ValueAnimator(from: start, to: dest, duration: time) { value in
+            onUpdateValue(CGFloat(value))
+        }
+        animator?.onCancel = {
+            onCancel?()
         }
         animator?.start()
     }
@@ -159,6 +157,7 @@ fileprivate var defaultEasingFunction: (TimeInterval, TimeInterval) -> (Double) 
     return 1 - pow(1 - t, 4)
 }
 
+/// From: https://stackoverflow.com/questions/61594608/ios-equivalent-of-androids-valueanimator
 class ValueAnimator {
     let from: Double
     let to: Double
@@ -182,13 +181,16 @@ class ValueAnimator {
         self.duration = duration
         self.animationCurveFunction = animationCurveFunction
         self.valueUpdater = valueUpdater
-        
-        print("dwccc duration is \(duration)")
     }
     
     func start() {
+#if os(macOS)
+        let displayLink = NSApplication.shared.keyWindow?.displayLink(target: self, selector: #selector(update))
+        displayLink?.add(to: .main, forMode: .default)
+#else
         displayLink = CADisplayLink(target: self, selector: #selector(update))
-        displayLink?.add(to: .current, forMode: .default)
+        displayLink?.add(to: .main, forMode: .default)
+#endif
     }
     
     @objc
@@ -215,7 +217,7 @@ class ValueAnimator {
     }
     
     func cancel() {
-        self.displayLink?.remove(from: .current, forMode: .default)
+        self.displayLink?.invalidate()
         self.displayLink = nil
         self.onCancel?()
     }

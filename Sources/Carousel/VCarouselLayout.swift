@@ -68,16 +68,13 @@ public struct VCarouselLayout: Layout {
     ///
     /// You can use the ``CarouselController`` to control the animation progress, or you can just use Timer or CADisplayLink
     /// to tick the progress value.
-    public private(set) var progress: CGFloat = 0
+    public private(set) var offset: CGFloat = 0
     
-    var idealSize: Binding<CGSize>
-
     /// Construct the ``VCarouselLayout`` with initial progress.
     ///
     /// See ``VCarouselLayout/progress`` for more information.
-    public init(progress: CGFloat, idealSize: Binding<CGSize> = .constant(.zero)) {
-        self.progress = progress
-        self.idealSize = idealSize
+    public init(offset: CGFloat) {
+        self.offset = offset
     }
     
     public func sizeThatFits(
@@ -89,13 +86,7 @@ public struct VCarouselLayout: Layout {
             return .zero
         }
         
-        let firstViewSize = sizeThatFits(proposal: proposal, subviews: subviews.suffix(1))
         let maxSize = sizeThatFits(proposal: proposal, subviews: subviews)
-        
-        if maxSize.width > 0 && maxSize.height > 0 {
-            idealSize.wrappedValue = maxSize
-            print("dwccc idealSize set to \(maxSize), for proposal \(proposal)")
-        }
         
         let resolvedProposal = proposal.replacingUnspecifiedDimensions()
         return CGSize(
@@ -110,10 +101,9 @@ public struct VCarouselLayout: Layout {
         subviews: Subviews,
         cache: inout ()
     ) {
-        let actualProgress = progress - CGFloat(Int(progress))
-        
         let totalHeight = sizeThatFits(proposal: proposal, subviews: subviews).height
-        var top = bounds.minY - actualProgress * totalHeight
+        let actualOffset = offset.truncatingRemainder(dividingBy: totalHeight)
+        var top = bounds.minY - actualOffset
         let leading = bounds.minX
         
         for view in subviews {

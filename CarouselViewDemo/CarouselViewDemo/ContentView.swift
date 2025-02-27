@@ -6,6 +6,7 @@
 //
 import SwiftUI
 import Carousel
+import Combine
 
 struct ContentView: View {
     var body: some View {
@@ -19,12 +20,13 @@ struct ImageData: Identifiable {
 }
 
 class ViewModel: ObservableObject {
-    @Published var leadingProgress: CGFloat = -0.3
-    @Published var centerProgress: CGFloat = 0.0
-    @Published var trailingProgress: CGFloat = 0.3
+    let leadingController = CarouselController(offset: 400)
+    let centerController = CarouselController(offset: -400)
+    let trailingController = CarouselController(offset: 0)
     
     @Published var timerStarted = false
     @Published var horizontalLayout = true
+    
     @Published var images: [ImageData] = [
         ImageData(id: "0", image: .image0),
         ImageData(id: "1", image: .carouselImage1),
@@ -47,36 +49,31 @@ class ViewModel: ObservableObject {
     var isCenterTouching = false
     var isTrailingTouching = false
     
-    private var timer: Timer?
+    private var cancellables = Set<AnyCancellable>()
     
+    @MainActor
     func fireTimer() {
-        timer?.invalidate()
+        timerStarted = true
+        leadingController.startAnimation()
+        centerController.startAnimation()
+        trailingController.startAnimation()
         
-        let delta = 0.0002
-        
-        self.timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 120.0, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            
-            if !isLeadingTouching {
-                self.leadingProgress -= delta
+        trailingController.$offset
+            .combineLatest(leadingController.$offset, centerController.$offset)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                objectWillChange.send()
             }
-            
-            if !isCenterTouching {
-                self.centerProgress += delta
-            }
-            
-            if !isTrailingTouching {
-                self.trailingProgress -= delta
-            }
-        }
-        
-        self.timerStarted = true
+            .store(in: &cancellables)
     }
     
+    @MainActor
     func stopTimer() {
-        timer?.invalidate()
-        timer = nil
         timerStarted = false
+        cancellables.removeAll()
+        leadingController.stopAnimation()
+        centerController.stopAnimation()
+        trailingController.stopAnimation()
     }
 }
 
@@ -94,27 +91,42 @@ private struct PhotoWallDemo: View {
             rootLayout {
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: $viewModel.leadingProgress
-                ) { isTouching in
-                    viewModel.isLeadingTouching = isTouching
+                    offset: Binding(get: {
+                        viewModel.leadingController.offset
+                    }, set: { value in
+                        viewModel.leadingController.offset = value
+                    }),
+                    enableDragging: true
+                ) { state in
+                    viewModel.isLeadingTouching = state.isActive
                 } content: {
                     forEachContentView
                 }
                 
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: $viewModel.centerProgress
-                ) { isTouching in
-                    viewModel.isCenterTouching = isTouching
+                    offset: Binding(get: {
+                        viewModel.centerController.offset
+                    }, set: { value in
+                        viewModel.centerController.offset = value
+                    }),
+                    enableDragging: true
+                ) { state in
+                    viewModel.isCenterTouching = state.isActive
                 } content: {
                     forEachContentView
                 }
                 
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: $viewModel.trailingProgress
-                ) { isTouching in
-                    viewModel.isTrailingTouching = isTouching
+                    offset: Binding(get: {
+                        viewModel.trailingController.offset
+                    }, set: { value in
+                        viewModel.trailingController.offset = value
+                    }),
+                    enableDragging: true
+                ) { state in
+                    viewModel.isTrailingTouching = state.isActive
                 } content: {
                     forEachContentView
                 }

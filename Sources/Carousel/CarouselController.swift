@@ -11,25 +11,25 @@ import SwiftUI
 ///
 /// You use ``startAnimation()`` and ``stopAnimation()`` to control the animation.
 public class CarouselController: ObservableObject {
-    public static let defaultDeltaProgress: CGFloat = 0.0002
+    public static let defaultDeltaOffset: CGFloat = 0.2
     
     /// The observer can observe the progress of the animation.
-    @Published public var progress: CGFloat
+    @Published public var offset: CGFloat
     
     /// Check if the animation is started.
     @Published public var timerStarted: Bool = false
     
     /// The delta progress of the animation.
-    /// You can use ``CarouselController/defaultDeltaProgress`` as the default value, or change it to your own value
+    /// You can use ``CarouselController/defaultDeltaOffset`` as the default value, or change it to your own value
     /// in runtime.
-    public var deltaProgress: CGFloat
+    public var deltaOffset: CGFloat
     
     private var displayLink: CADisplayLink?
     
     /// Construct the ``CarouselController`` with initial progress and delta progress.
-    public init(progress: CGFloat = 0.0, deltaProgress: CGFloat = CarouselController.defaultDeltaProgress) {
-        self.progress = progress
-        self.deltaProgress = deltaProgress
+    public init(offset: CGFloat = 0.0, deltaOffset: CGFloat = CarouselController.defaultDeltaOffset) {
+        self.offset = offset
+        self.deltaOffset = deltaOffset
     }
     
     deinit {
@@ -41,12 +41,12 @@ public class CarouselController: ObservableObject {
     @MainActor
     public func startAnimation() {
 #if os(iOS)
-        let displayLink = CADisplayLink(target: self, selector: #selector(updateProgress))
+        let displayLink = CADisplayLink(target: self, selector: #selector(update))
         displayLink.add(to: .current, forMode: .default)
         displayLink.isPaused = false
         self.displayLink = displayLink
 #else
-        let displayLink = NSApplication.shared.keyWindow?.displayLink(target: self, selector: #selector(updateProgress))
+        let displayLink = NSApplication.shared.keyWindow?.displayLink(target: self, selector: #selector(update))
         displayLink?.add(to: .current, forMode: .default)
         displayLink?.isPaused = false
         self.displayLink = displayLink
@@ -61,7 +61,7 @@ public class CarouselController: ObservableObject {
     }
     
     @objc
-    private func updateProgress() {
-        self.progress -= deltaProgress
+    private func update() {
+        self.offset -= deltaOffset
     }
 }
