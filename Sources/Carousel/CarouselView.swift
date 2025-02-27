@@ -185,12 +185,15 @@ class ValueAnimator {
     
     func start() {
 #if os(macOS)
-        // todo fix: on macOS, the update will still be called after cancelling.
         let displayLink = NSApplication.shared.keyWindow?.displayLink(target: self, selector: #selector(update))
-        displayLink?.add(to: .main, forMode: .default)
+        displayLink?.add(to: .current, forMode: .default)
+        displayLink?.isPaused = false
+        self.displayLink = displayLink
 #else
-        displayLink = CADisplayLink(target: self, selector: #selector(update))
-        displayLink?.add(to: .main, forMode: .default)
+        let displayLink = CADisplayLink(target: self, selector: #selector(update))
+        displayLink.add(to: .main, forMode: .default)
+        displayLink.isPaused = false
+        self.displayLink = displayLink
 #endif
     }
     
@@ -218,6 +221,7 @@ class ValueAnimator {
     }
     
     func cancel() {
+        self.displayLink?.isPaused = true
         self.displayLink?.invalidate()
         self.displayLink = nil
         self.onCancel?()
