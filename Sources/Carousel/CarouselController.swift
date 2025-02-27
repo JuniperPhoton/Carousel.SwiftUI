@@ -8,31 +8,50 @@ import Foundation
 import SwiftUI
 
 public class CarouselController: ObservableObject {
+    public static let defaultDeltaProgress: CGFloat = 0.0002
+    
     @Published public var progress: CGFloat
     @Published public var timerStarted: Bool = false
     
-    private var timer: Timer?
-    private var deltaProgress: CGFloat
+    public var deltaProgress: CGFloat
     
-    public init(progress: CGFloat = 0.0, deltaProgress: CGFloat = 0.0002) {
+    private var displayLink: CADisplayLink?
+    
+    public init(progress: CGFloat = 0.0, deltaProgress: CGFloat = CarouselController.defaultDeltaProgress) {
         self.progress = progress
         self.deltaProgress = deltaProgress
     }
     
+    deinit {
+        print("CarouselController deinit")
+        displayLink?.invalidate()
+        displayLink = nil
+    }
+    
+    @MainActor
     public func startAnimation() {
-        timer?.invalidate()
-                
-        self.timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 120.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            self.progress -= deltaProgress
-        }
-        
+#if os(iOS)
+        let displayLink = CADisplayLink(target: self, selector: #selector(updateProgress))
+        displayLink.add(to: .current, forMode: .default)
+        displayLink.isPaused = false
+        self.displayLink = displayLink
+#else
+        let displayLink = NSApplication.shared.keyWindow?.displayLink(target: self, selector: #selector(updateProgress))
+        displayLink?.add(to: .current, forMode: .default)
+        displayLink?.isPaused = false
+        self.displayLink = displayLink
+#endif
         self.timerStarted = true
     }
     
+    @objc
+    private func updateProgress() {
+        self.progress -= deltaProgress
+    }
+    
     public func stopAnimation() {
-        timer?.invalidate()
-        timer = nil
+        displayLink?.remove(from: .current, forMode: .default)
+        displayLink?.isPaused = false
         timerStarted = false
     }
 }

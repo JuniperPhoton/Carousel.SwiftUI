@@ -59,17 +59,15 @@ class ViewModel: ObservableObject {
 public struct CarouselDemoView: View {
     public var body: some View {
         TabView {
-            Tab {
-                PhotoWallDemo()
-            } label: {
-                Text("Photo Wall")
-            }
+            PhotoWallDemo()
+                .tabItem {
+                    Text("Photo wall")
+                }
             
-            Tab {
-                SwitchLayoutDemo()
-            } label: {
-                Text("Switch Layout")
-            }
+            SwitchLayoutDemo()
+                .tabItem {
+                    Text("Switch layout")
+                }
         }
     }
 }
