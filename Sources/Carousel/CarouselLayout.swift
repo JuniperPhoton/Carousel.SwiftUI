@@ -1,5 +1,5 @@
 //
-//  CarouselView.swift
+//  CarouselLayout.swift
 //  Carousel.SwiftUI
 //
 //  Created by JuniperPhoton on 2025/2/27.

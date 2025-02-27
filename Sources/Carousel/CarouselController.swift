@@ -4,8 +4,12 @@
 //
 //  Created by JuniperPhoton on 2025/2/27.
 //
+import Foundation
+import SwiftUI
+
 public class CarouselController: ObservableObject {
     @Published public var progress: CGFloat
+    @Published public var timerStarted: Bool = false
     
     private var timer: Timer?
     private var deltaProgress: CGFloat
@@ -20,9 +24,7 @@ public class CarouselController: ObservableObject {
                 
         self.timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 120.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            self.leadingProgress -= deltaProgress
-            self.centerProgress += deltaProgress
-            self.trailingProgress -= deltaProgress
+            self.progress -= deltaProgress
         }
         
         self.timerStarted = true
