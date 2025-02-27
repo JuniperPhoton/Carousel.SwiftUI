@@ -142,38 +142,39 @@ private struct PhotoWallDemo: View {
                 trailingLayout {
                     forEachContentView
                 }
-            }.clipped().overlay {
-                Rectangle().fill(
-                    LinearGradient(
-                        colors: [.black.opacity(0.0), .black.opacity(1.0)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                ).frame(height: 100)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                
-                HStack {
-                    Button(viewModel.timerStarted ? "Stop Carousel" : "Start Carousel") {
-                        if !viewModel.timerStarted {
-                            viewModel.fireTimer()
-                        } else {
-                            viewModel.stopTimer()
-                        }
-                    }
-                    .fixedSize()
+            }.clipped()
+                .frame(maxHeight: .infinity).overlay {
+                    Rectangle().fill(
+                        LinearGradient(
+                            colors: [.black.opacity(0.0), .black.opacity(1.0)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    ).frame(height: 100)
+                        .frame(maxHeight: .infinity, alignment: .bottom)
                     
-                    Button(viewModel.horizontalLayout ? "Horizontal" : "Vertical") {
-                        withAnimation {
-                            viewModel.horizontalLayout.toggle()
+                    HStack {
+                        Button(viewModel.timerStarted ? "Stop Carousel" : "Start Carousel") {
+                            if !viewModel.timerStarted {
+                                viewModel.fireTimer()
+                            } else {
+                                viewModel.stopTimer()
+                            }
                         }
+                        .fixedSize()
+                        
+                        Button(viewModel.horizontalLayout ? "Horizontal" : "Vertical") {
+                            withAnimation {
+                                viewModel.horizontalLayout.toggle()
+                            }
+                        }
+                        .fixedSize()
                     }
-                    .fixedSize()
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .padding()
+                    .frame(maxHeight: .infinity, alignment: .bottom)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .padding()
-                .frame(maxHeight: .infinity, alignment: .bottom)
-            }
         }
     }
     
