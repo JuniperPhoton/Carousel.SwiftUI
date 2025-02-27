@@ -81,6 +81,7 @@ private struct SwitchLayoutDemo: View {
                 forEachContentView
             }.clipped()
                 .frame(maxHeight: .infinity)
+                .ignoresSafeArea()
             
             HStack {
                 Button(viewModel.timerStarted ? "Stop Carousel" : "Start Carousel") {

@@ -7,16 +7,26 @@
 import Foundation
 import SwiftUI
 
+/// A helper controller to control the progress of the ``HCarouselLayout`` and ``VCarouselLayout``.
+///
+/// You use ``startAnimation()`` and ``stopAnimation()`` to control the animation.
 public class CarouselController: ObservableObject {
     public static let defaultDeltaProgress: CGFloat = 0.0002
     
+    /// The observer can observe the progress of the animation.
     @Published public var progress: CGFloat
+    
+    /// Check if the animation is started.
     @Published public var timerStarted: Bool = false
     
+    /// The delta progress of the animation.
+    /// You can use ``CarouselController/defaultDeltaProgress`` as the default value, or change it to your own value
+    /// in runtime.
     public var deltaProgress: CGFloat
     
     private var displayLink: CADisplayLink?
     
+    /// Construct the ``CarouselController`` with initial progress and delta progress.
     public init(progress: CGFloat = 0.0, deltaProgress: CGFloat = CarouselController.defaultDeltaProgress) {
         self.progress = progress
         self.deltaProgress = deltaProgress
@@ -44,14 +54,14 @@ public class CarouselController: ObservableObject {
         self.timerStarted = true
     }
     
-    @objc
-    private func updateProgress() {
-        self.progress -= deltaProgress
-    }
-    
     public func stopAnimation() {
         displayLink?.isPaused = true
         displayLink?.invalidate()
         timerStarted = false
+    }
+    
+    @objc
+    private func updateProgress() {
+        self.progress -= deltaProgress
     }
 }
