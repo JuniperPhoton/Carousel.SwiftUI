@@ -8,12 +8,12 @@ import SwiftUI
 
 /// A Custom Layout to achieve the vertical Carousel layout that:
 /// - Support infinite-scrolling like animation.
-/// - Support external control of the animation progress. See ``progress``.
+/// - Support external control of the animation offset. See ``offset``.
 ///
 /// Typically you use the layouts to build the phot-wall like feature, showing a list of images in a vertical/horizontal layout
 /// with infinite-scrolling animation.
 ///
-/// When the progress is 0, the layout will be like `VStack`, but with no alignment and spacing support.
+/// When the offset is 0, the layout will be like `VStack`, but with no alignment and spacing support.
 /// To align the content on the cross axis or adding spacings, you should do it on your sub views.
 ///
 /// Example code:
@@ -21,7 +21,7 @@ import SwiftUI
 /// ```swift
 /// let controller = CarouselController()
 ///
-/// VCarouselLayout(progress: controller.progress) {
+/// VCarouselLayout(offset: controller.offset) {
 ///     ForEach(0..<assets.count) { index in
 ///         Image(assets[index].resource)
 ///             .resizeable()
@@ -39,9 +39,9 @@ import SwiftUI
 /// ```swift
 /// private var layout: AnyLayout {
 ///     if viewModel.horizontalLayout {
-///         AnyLayout(HCarouselLayout(progress: controller.progress))
+///         AnyLayout(HCarouselLayout(offset: controller.offset))
 ///     } else {
-///         AnyLayout(VCarouselLayout(progress: controller.progress))
+///         AnyLayout(VCarouselLayout(offset: controller.offset))
 ///     }
 /// }
 ///
@@ -50,31 +50,25 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// > Note: Don't animate the progress directly. Instead, you should use the "timer" style
-/// to animate the progress like `Timer` or `CADisplayLink`.
+/// > Note: Don't animate the offset directly. Instead, you should use the "timer" style
+/// to animate the offset like `Timer` or `CADisplayLink`.
 public struct VCarouselLayout: Layout {
-    /// The progress of the current animation carousel layout.
+    /// The offset of the current animation carousel layout in points.
     ///
-    /// The value of 0 means the layout will be in its initial state.
+    /// Offset that is greater than 0 means the layout will be scrolled up, wise versa.
     ///
-    /// The value of 1 means the layout will be in its final state, where the last item
-    /// will be fully visible.
-    ///
-    /// Values greater than 1 mean that it's in the next circle of infinite-scrolling animation.
-    /// For instance, the visual effect of progress of 0.1 is equivalent to progress of 1.1.
-    ///
-    /// You don't change the progress directly, instead, you pass a new value to the ``CarouselController``
+    /// You don't change the offset directly, instead, you pass a new value to the ``CarouselController``
     /// for external event changes.
     ///
-    /// You can use the ``CarouselController`` to control the animation progress, or you can just use Timer or CADisplayLink
-    /// to tick the progress value.
-    public private(set) var progress: CGFloat = 0
+    /// You can use the ``CarouselController`` to control the animation offset, or you can just use Timer or CADisplayLink
+    /// to tick the offset value.
+    public private(set) var offset: CGFloat = 0
     
-    /// Construct the ``VCarouselLayout`` with initial progress.
+    /// Construct the ``VCarouselLayout`` with initial offset.
     ///
-    /// See ``VCarouselLayout/progress`` for more information.
-    public init(progress: CGFloat) {
-        self.progress = progress
+    /// See ``VCarouselLayout/offset`` for more information.
+    public init(offset: CGFloat) {
+        self.offset = offset
     }
     
     public func sizeThatFits(
@@ -86,7 +80,6 @@ public struct VCarouselLayout: Layout {
             return .zero
         }
         
-        let firstViewSize = sizeThatFits(proposal: proposal, subviews: subviews.suffix(1))
         let maxSize = sizeThatFits(proposal: proposal, subviews: subviews)
         
         let resolvedProposal = proposal.replacingUnspecifiedDimensions()
@@ -102,10 +95,9 @@ public struct VCarouselLayout: Layout {
         subviews: Subviews,
         cache: inout ()
     ) {
-        let actualProgress = progress - CGFloat(Int(progress))
-        
         let totalHeight = sizeThatFits(proposal: proposal, subviews: subviews).height
-        var top = bounds.minY - actualProgress * totalHeight
+        let actualOffset = offset.truncatingRemainder(dividingBy: totalHeight)
+        var top = bounds.minY - actualOffset
         let leading = bounds.minX
         
         for view in subviews {

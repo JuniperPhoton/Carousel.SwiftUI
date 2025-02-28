@@ -6,6 +6,7 @@
 //
 import SwiftUI
 import Carousel
+import Combine
 
 struct ContentView: View {
     var body: some View {
@@ -19,111 +20,66 @@ struct ImageData: Identifiable {
 }
 
 class ViewModel: ObservableObject {
-    @Published var leadingProgress: CGFloat = -0.3
-    @Published var centerProgress: CGFloat = 0.0
-    @Published var trailingProgress: CGFloat = 0.3
+    let leadingController = CarouselController(offset: 400)
+    let centerController = CarouselController(offset: -400)
+    let trailingController = CarouselController(offset: 0)
     
     @Published var timerStarted = false
     @Published var horizontalLayout = true
+    
     @Published var images: [ImageData] = [
         ImageData(id: "0", image: .image0),
-        ImageData(id: "1", image: .image1),
+        ImageData(id: "1", image: .carouselImage1),
         ImageData(id: "2", image: .image2),
-        ImageData(id: "3", image: .image3),
+        ImageData(id: "3", image: .carouselImage2),
         ImageData(id: "4", image: .image4),
+        ImageData(id: "5", image: .carouselImage3),
+        ImageData(id: "6", image: .image1),
+        ImageData(id: "7", image: .carouselImage4),
+        ImageData(id: "8", image: .image3),
+        ImageData(id: "9", image: .carouselImage5),
+        ImageData(id: "10", image: .carouselImage6),
+        ImageData(id: "11", image: .carouselImage7),
+        ImageData(id: "12", image: .carouselImage8),
+        ImageData(id: "13", image: .carouselImage9),
+        ImageData(id: "14", image: .carouselImage10),
     ]
     
-    private var timer: Timer?
+    var isLeadingTouching = false
+    var isCenterTouching = false
+    var isTrailingTouching = false
     
+    private var cancellables = Set<AnyCancellable>()
+    
+    @MainActor
     func fireTimer() {
-        timer?.invalidate()
+        timerStarted = true
+        leadingController.startAnimation()
+        centerController.startAnimation()
+        trailingController.startAnimation()
         
-        let delta = 0.0002
-        
-        self.timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 120.0, repeats: true) { _ in
-            self.leadingProgress -= delta
-            self.centerProgress += delta
-            self.trailingProgress -= delta
-        }
-        
-        self.timerStarted = true
+        trailingController.$offset
+            .combineLatest(leadingController.$offset, centerController.$offset)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
     
+    @MainActor
     func stopTimer() {
-        timer?.invalidate()
-        timer = nil
         timerStarted = false
+        cancellables.removeAll()
+        leadingController.stopAnimation()
+        centerController.stopAnimation()
+        trailingController.stopAnimation()
     }
 }
 
 public struct CarouselDemoView: View {
     public var body: some View {
-        TabView {
-            PhotoWallDemo()
-                .tabItem {
-                    Text("Photo wall")
-                }
-            
-            SwitchLayoutDemo()
-                .tabItem {
-                    Text("Switch layout")
-                }
-        }
-    }
-}
-
-private struct SwitchLayoutDemo: View {
-    @StateObject private var viewModel = ViewModel()
-    
-    var body: some View {
-        VStack {
-            CarouselView(
-                orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                progress: viewModel.leadingProgress
-            ) {
-                forEachContentView
-            }
-            .frame(maxHeight: .infinity)
-            .ignoresSafeArea()
-            
-            HStack {
-                Button(viewModel.timerStarted ? "Stop Carousel" : "Start Carousel") {
-                    if !viewModel.timerStarted {
-                        viewModel.fireTimer()
-                    } else {
-                        viewModel.stopTimer()
-                    }
-                }
-                .fixedSize()
-                
-                Button(viewModel.horizontalLayout ? "Horizontal" : "Vertical") {
-                    withAnimation {
-                        viewModel.horizontalLayout.toggle()
-                    }
-                }
-                .fixedSize()
-            }.buttonStyle(.bordered)
-                .controlSize(.large)
-                .padding()
-        }
-    }
-    
-    private var layout: AnyLayout {
-        if viewModel.horizontalLayout {
-            AnyLayout(HCarouselLayout(progress: viewModel.leadingProgress))
-        } else {
-            AnyLayout(VCarouselLayout(progress: viewModel.leadingProgress))
-        }
-    }
-    
-    private var forEachContentView: some View {
-        ForEach(viewModel.images) { image in
-            Image(image.image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 200)
-                .padding(4)
-        }
+        PhotoWallDemo()
     }
 }
 
@@ -135,25 +91,46 @@ private struct PhotoWallDemo: View {
             rootLayout {
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: viewModel.leadingProgress
-                ) {
+                    offset: Binding(get: {
+                        viewModel.leadingController.offset
+                    }, set: { value in
+                        viewModel.leadingController.offset = value
+                    }),
+                    enableDragging: true
+                ) { state in
+                    viewModel.isLeadingTouching = state.isActive
+                } content: {
                     forEachContentView
                 }
                 
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: viewModel.centerProgress
-                ) {
+                    offset: Binding(get: {
+                        viewModel.centerController.offset
+                    }, set: { value in
+                        viewModel.centerController.offset = value
+                    }),
+                    enableDragging: true
+                ) { state in
+                    viewModel.isCenterTouching = state.isActive
+                } content: {
                     forEachContentView
                 }
                 
                 CarouselView(
                     orientation: viewModel.horizontalLayout ? .horizontal : .vertical,
-                    progress: viewModel.trailingProgress
-                ) {
+                    offset: Binding(get: {
+                        viewModel.trailingController.offset
+                    }, set: { value in
+                        viewModel.trailingController.offset = value
+                    }),
+                    enableDragging: true
+                ) { state in
+                    viewModel.isTrailingTouching = state.isActive
+                } content: {
                     forEachContentView
                 }
-            }.clipped()
+            }.ignoresSafeArea()
                 .frame(maxHeight: .infinity).overlay {
                     Rectangle().fill(
                         LinearGradient(
@@ -163,6 +140,7 @@ private struct PhotoWallDemo: View {
                         )
                     ).frame(height: 100)
                         .frame(maxHeight: .infinity, alignment: .bottom)
+                        .ignoresSafeArea()
                     
                     HStack {
                         Button(viewModel.timerStarted ? "Stop Carousel" : "Start Carousel") {
@@ -181,11 +159,14 @@ private struct PhotoWallDemo: View {
                         }
                         .fixedSize()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .padding()
                     .frame(maxHeight: .infinity, alignment: .bottom)
                 }
+        }
+        .onAppear {
+            viewModel.fireTimer()
         }
     }
     
@@ -202,8 +183,9 @@ private struct PhotoWallDemo: View {
             Image(image.image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 200)
-                .padding(4)
+                .contentShape(Rectangle())
+                .clipped()
+                .padding(2)
         }
     }
 }
