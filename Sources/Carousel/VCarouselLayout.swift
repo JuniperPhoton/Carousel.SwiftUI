@@ -10,7 +10,7 @@ import SwiftUI
 /// - Support infinite-scrolling like animation.
 /// - Support external control of the animation offset. See ``offset``.
 ///
-/// Typically you use the layouts to build the phot-wall like feature, showing a list of images in a vertical/horizontal layout
+/// Typically you use the layouts to build the photo-wall like feature, showing a list of images in a vertical/horizontal layout
 /// with infinite-scrolling animation.
 ///
 /// When the offset is 0, the layout will be like `VStack`, but with no alignment and spacing support.
