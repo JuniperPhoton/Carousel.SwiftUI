@@ -165,6 +165,9 @@ private struct PhotoWallDemo: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
                 }
         }
+        .onAppear {
+            viewModel.fireTimer()
+        }
     }
     
     private var rootLayout: AnyLayout {

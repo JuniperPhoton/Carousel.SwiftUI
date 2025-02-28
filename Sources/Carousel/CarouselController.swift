@@ -24,44 +24,46 @@ public class CarouselController: ObservableObject {
     /// in runtime.
     public var deltaOffset: CGFloat
     
-    private var displayLink: CADisplayLink?
+    private var displaySyncer: DisplaySyncer
     
-    /// Construct the ``CarouselController`` with initial offset and delta offset.
-    public init(offset: CGFloat = 0.0, deltaOffset: CGFloat = CarouselController.defaultDeltaOffset) {
+    /// Construct the ``CarouselController`` with initial offset, delta offset and the display syncer.
+    /// - parameter displaySyncer: An `DisplaySyncer` instance to sync the animation.
+    public init(
+        offset: CGFloat = 0.0,
+        deltaOffset: CGFloat = CarouselController.defaultDeltaOffset,
+        displaySyncer: DisplaySyncer? = nil
+    ) {
         self.offset = offset
         self.deltaOffset = deltaOffset
+        
+        if let displaySyncer {
+            self.displaySyncer = displaySyncer
+        }  else {
+#if os(iOS)
+            self.displaySyncer = DefaultCADisplayLinkSyncer()
+#else
+            self.displaySyncer = KeyWindowCADisplayLinkSyncer()
+#endif
+        }
+        
+        self.displaySyncer.onUpdate = { [weak self] in
+            guard let self = self else { return }
+            self.offset += self.deltaOffset
+        }
     }
     
     deinit {
         print("CarouselController deinit")
-        displayLink?.invalidate()
-        displayLink = nil
+        displaySyncer.stopAnimation()
     }
     
     @MainActor
     public func startAnimation() {
-#if os(iOS)
-        let displayLink = CADisplayLink(target: self, selector: #selector(update))
-        displayLink.add(to: .current, forMode: .default)
-        displayLink.isPaused = false
-        self.displayLink = displayLink
-#else
-        let displayLink = NSApplication.shared.keyWindow?.displayLink(target: self, selector: #selector(update))
-        displayLink?.add(to: .current, forMode: .default)
-        displayLink?.isPaused = false
-        self.displayLink = displayLink
-#endif
-        self.timerStarted = true
+        displaySyncer.startAnimation()
     }
     
     public func stopAnimation() {
-        displayLink?.isPaused = true
-        displayLink?.invalidate()
+        displaySyncer.stopAnimation()
         timerStarted = false
-    }
-    
-    @objc
-    private func update() {
-        self.offset -= deltaOffset
     }
 }

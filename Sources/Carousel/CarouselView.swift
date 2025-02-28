@@ -152,6 +152,7 @@ private class GestureState: ObservableObject {
     }
 }
 
+/// todo: provide a better easing function.
 fileprivate var defaultEasingFunction: (TimeInterval, TimeInterval) -> (Double) = { time, duration in
     let t = time / duration
     return 1 - pow(1 - t, 4)
