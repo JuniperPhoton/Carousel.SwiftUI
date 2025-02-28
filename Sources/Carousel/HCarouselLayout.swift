@@ -10,12 +10,10 @@ import SwiftUI
 ///
 /// See the comments of ``VCarouselLayout`` for more information.
 public struct HCarouselLayout: Layout {
-    var progress: CGFloat = 0
-    var idealSize: Binding<CGSize>
+    var offset: CGFloat = 0
     
-    public init(progress: CGFloat, idealSize: Binding<CGSize> = .constant(.zero)) {
-        self.progress = progress
-        self.idealSize = idealSize
+    public init(offset: CGFloat) {
+        self.offset = offset
     }
     
     public func sizeThatFits(
@@ -27,13 +25,7 @@ public struct HCarouselLayout: Layout {
             return .zero
         }
         
-        let firstViewSize = sizeThatFits(proposal: proposal, subviews: subviews.suffix(1))
         let maxSize = sizeThatFits(proposal: proposal, subviews: subviews)
-        
-        if maxSize.width > 0 && maxSize.height > 0 {
-            idealSize.wrappedValue = maxSize
-            print("dwccc idealSize set to \(maxSize), for proposal \(proposal)")
-        }
         
         let resolvedProposal = proposal.replacingUnspecifiedDimensions()
         return CGSize(
@@ -48,11 +40,10 @@ public struct HCarouselLayout: Layout {
         subviews: Subviews,
         cache: inout ()
     ) {
-        let actualProgress = progress - CGFloat(Int(progress))
-        
         let totalWidth = sizeThatFits(proposal: proposal, subviews: subviews).width
+        let actualOffset = offset.truncatingRemainder(dividingBy: totalWidth)
         let top = bounds.minY
-        var leading = bounds.minX - actualProgress * totalWidth
+        var leading = bounds.minX - actualOffset
         
         for view in subviews {
             let size = view.sizeThatFits(proposal)
