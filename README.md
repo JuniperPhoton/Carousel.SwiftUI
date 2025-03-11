@@ -1,6 +1,6 @@
 # Carousel for SwiftUI
 
-A SwiftUI carousel View and Layout, featuring:
+A SwiftUI Carousel View and Layout, featuring:
 
 - Infinite scrolling, implemented with SwiftUI's Layout protocol.
 - No ScrollView is used/inspected. Drag gesture is implemented using SwiftUI's DragGesture.
@@ -12,7 +12,7 @@ Below is a low-frame GIF to demonstrate what visual effect it can achieve. To se
 
 ![](./Docs/carousel.gif)
 
-This Library supports iOS 16+ and macOS 14+. Note that it internally uses `CADisplayLink` to drive animation, which is available until macOS 14, although the `Layout` protocol is available since macOS 13.
+This Library supports iOS 16+ and macOS 14+. Note that it internally uses `CADisplayLink` to drive animation, which is not available until macOS 14, although the `Layout` protocol is available since macOS 13.
 
 > This Library is developed for my own app [PhotonCam](https://juniperphoton.dev/photoncam/) in production. It currently fit my needs, and pull requests or issues are also welcome.
 
