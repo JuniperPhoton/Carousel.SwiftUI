@@ -50,36 +50,30 @@ public struct CarouselView<Content: View>: View {
         }.onEnded { value in
             if let dragStartedOffset = gestureState.dragStartedOffset {
                 let predictedEndTranslation = value.predictedEndTranslation
-
+                
+                let time: TimeInterval
+                let destinationOffset: CGFloat
+                
                 switch orientation {
                 case .horizontal:
-                    let time = (predictedEndTranslation.width - value.translation.width) / value.velocity.width
-                    onDragStateChanged?(DragState(isDragging: false, isEnding: true))
-                    gestureState.animating = true
-                    gestureState.timerToSet(
-                        start: offset.wrappedValue,
-                        dest: dragStartedOffset - predictedEndTranslation.width,
-                        time: time * 3
-                    ) { value in
-                        offset.wrappedValue = value
-                    } onCancel: {
-                        gestureState.animating = false
-                        onDragStateChanged?(.inactive)
-                    }
+                    time = (predictedEndTranslation.width - value.translation.width) / value.velocity.width
+                    destinationOffset = dragStartedOffset - predictedEndTranslation.width
                 case .vertical:
-                    let time = (predictedEndTranslation.height - value.translation.height) / value.velocity.height
-                    onDragStateChanged?(DragState(isDragging: false, isEnding: true))
-                    gestureState.animating = true
-                    gestureState.timerToSet(
-                        start: offset.wrappedValue,
-                        dest: dragStartedOffset - predictedEndTranslation.height,
-                        time: time * 3
-                    ) { value in
-                        offset.wrappedValue = value
-                    } onCancel: {
-                        gestureState.animating = false
-                        onDragStateChanged?(.inactive)
-                    }
+                    time = (predictedEndTranslation.height - value.translation.height) / value.velocity.height
+                    destinationOffset = dragStartedOffset - predictedEndTranslation.height
+                }
+                
+                onDragStateChanged?(DragState(isDragging: false, isEnding: true))
+                gestureState.animating = true
+                gestureState.animate(
+                    start: offset.wrappedValue,
+                    dest: destinationOffset,
+                    time: time * 3
+                ) { value in
+                    offset.wrappedValue = value
+                } onCancelOrComplete: {
+                    gestureState.animating = false
+                    onDragStateChanged?(.inactive)
                 }
             }
             
@@ -87,6 +81,17 @@ public struct CarouselView<Content: View>: View {
         }
     }
     
+    /// Construct the `CarouselView` with orientation, offset, enableDragging and content.
+    ///
+    /// - parameter orientation: The orientation of the carousel.
+    /// This property suppots animation, you can trigger the animation by changing the orientation with `withAnimation`.
+    /// - parameter offset: The offset of the carousel in Pixel. It uses Binding so that this view can change it with drag gesture.
+    /// - parameter enableDragging: Enable the drag gesture to change the offset.
+    /// There are some tiny details to refine the dragging gesture. Test this to see if it fits your needs.
+    /// - parameter onDragStateChanged: A closure that will be called when the dragging state is changed.
+    /// - parameter content: The content of the carousel. You can use `ForEach` to create multiple content views.
+    /// Note that SwiftUI doesn't provide a method to implement custom lazy layout, so keep the number of views in a reasonable range,
+    /// as this view aims to provide infinite scrolling animation with a small amount of views.
     public init(
         orientation: Axis,
         offset: Binding<CGFloat>,
@@ -135,18 +140,18 @@ private class GestureState: ObservableObject {
     
     private var animator: ValueAnimator?
     
-    func timerToSet(
+    func animate(
         start: CGFloat,
         dest: CGFloat,
         time: TimeInterval,
         onUpdateValue: @escaping (CGFloat) -> Void,
-        onCancel: (() -> Void)? = nil
+        onCancelOrComplete: (() -> Void)? = nil
     ) {
         animator = ValueAnimator(from: start, to: dest, duration: time) { value in
             onUpdateValue(CGFloat(value))
         }
         animator?.onCancel = {
-            onCancel?()
+            onCancelOrComplete?()
         }
         animator?.start()
     }
@@ -159,7 +164,7 @@ fileprivate var defaultEasingFunction: (TimeInterval, TimeInterval) -> (Double) 
 }
 
 /// From: https://stackoverflow.com/questions/61594608/ios-equivalent-of-androids-valueanimator
-class ValueAnimator {
+fileprivate class ValueAnimator {
     let from: Double
     let to: Double
     var duration: TimeInterval = 0

@@ -17,17 +17,22 @@ public class CarouselController: ObservableObject {
     @Published public var offset: CGFloat
     
     /// Check if the animation is started.
-    @Published public var timerStarted: Bool = false
+    @Published public private(set) var animationStarted: Bool = false
     
     /// The delta offset of the animation.
     /// You can use ``CarouselController/defaultDeltaOffset`` as the default value, or change it to your own value
     /// in runtime.
     public var deltaOffset: CGFloat
     
-    private var displaySyncer: DisplaySyncer
+    /// The display syncer to drive the animation.
+    private let displaySyncer: DisplaySyncer
     
     /// Construct the ``CarouselController`` with initial offset, delta offset and the display syncer.
-    /// - parameter displaySyncer: An `DisplaySyncer` instance to sync the animation.
+    /// - parameter offset: The initial offset of the animation in Pixel.
+    /// - parameter deltaOffset: The delta offset of the animation in Pixel for each update in the display syncer.
+    /// By defaut it's ``CarouselController.defaultDeltaOffset``.
+    /// - parameter displaySyncer: An ``DisplaySyncer`` instance to drive the animation. If nil, it will use the default one to drive the animation.
+    /// See ``DisplaySyncer`` for more details. You also implement your own ``DisplaySyncer`` by conforming to the protocol.
     public init(
         offset: CGFloat = 0.0,
         deltaOffset: CGFloat = CarouselController.defaultDeltaOffset,
@@ -53,17 +58,18 @@ public class CarouselController: ObservableObject {
     }
     
     deinit {
-        print("CarouselController deinit")
         displaySyncer.stopAnimation()
     }
     
     @MainActor
     public func startAnimation() {
         displaySyncer.startAnimation()
+        animationStarted = true
     }
     
+    @MainActor
     public func stopAnimation() {
         displaySyncer.stopAnimation()
-        timerStarted = false
+        animationStarted = false
     }
 }

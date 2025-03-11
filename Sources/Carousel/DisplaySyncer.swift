@@ -11,9 +11,15 @@ import SwiftUI
 ///
 /// It's recommended to use ``NSViewCADisplayLinkSyncer`` or ``KeyWindowCADisplayLinkSyncer`` on macOS
 ///  and ``DefaultCADisplayLinkSyncer`` on iOS.
-public protocol DisplaySyncer {
+public protocol DisplaySyncer: AnyObject {
+    /// A block to be called when the display is updated.
+    /// For example, when using ``CADisplayLink`` on a iPhone 16 Pro, it should trigger at 120Hz.
     var onUpdate: (() -> Void)? { get set }
+    
+    /// Start the animation.
     func startAnimation()
+    
+    /// Stop the animation.
     func stopAnimation()
 }
 
