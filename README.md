@@ -63,7 +63,7 @@ let offset = controller.offset
 controller.stopAnimation()
 ```
 
-By default, `CarouselController` use `CADispalyLink` based method to drive the animation, you can also provide your own implementation, by conforming to `DisplaySyncer` protocol and pass it to the initializer of `CarouselController`. See the initializer of `CarouselController` for more details.
+By default, `CarouselController` uses `CADispalyLink` based method to drive the animation, you can also provide your own implementation, by conforming to `DisplaySyncer` protocol and pass it to the initializer of `CarouselController`. See the initializer of `CarouselController` for more details.
 
 To animate switching orientation of the `CarouselView`, you can simply declare the orientation as a state and change it within an animation transaction:
 

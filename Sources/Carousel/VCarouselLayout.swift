@@ -33,7 +33,7 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// To switching between horizontal and vertical layout, it's recommended to use
+/// To switch between horizontal and vertical layout, it's recommended to use
 /// [AnyLayout](https://developer.apple.com/documentation/swiftui/anylayout) in SwiftUI.
 ///
 /// ```swift

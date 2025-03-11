@@ -28,8 +28,8 @@ public class CarouselController: ObservableObject {
     private let displaySyncer: DisplaySyncer
     
     /// Construct the ``CarouselController`` with initial offset, delta offset and the display syncer.
-    /// - parameter offset: The initial offset of the animation in Pixel.
-    /// - parameter deltaOffset: The delta offset of the animation in Pixel for each update in the display syncer.
+    /// - parameter offset: The initial offset of the animation in points.
+    /// - parameter deltaOffset: The delta offset of the animation in points for each update in the display syncer.
     /// By defaut it's ``CarouselController.defaultDeltaOffset``.
     /// - parameter displaySyncer: An ``DisplaySyncer`` instance to drive the animation. If nil, it will use the default one to drive the animation.
     /// See ``DisplaySyncer`` for more details. You also implement your own ``DisplaySyncer`` by conforming to the protocol.
