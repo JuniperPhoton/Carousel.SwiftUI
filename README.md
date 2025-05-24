@@ -26,7 +26,7 @@ https://github.com/JuniperPhoton/Carousel.SwiftUI
 
 ### Use `CarouselView`
 
-`CarouselView` encapsulates both the `HCarouselLayout` and `VCarouselLayout` and provides a simple API to use. You can stack multiply `CarouselView` in a VStack or HStack to create a multiply `CarouselView` just like the GIF/Video does above.
+`CarouselView` encapsulates both the `HCarouselLayout` and `VCarouselLayout` and provides a simple API to use. You can stack multiple `CarouselView` in a VStack or HStack to create multiple `CarouselView` just like the GIF/Video does above.
 
 ![](./Docs/carousel.png)
 
@@ -46,7 +46,7 @@ CarouselView(
 }
 ```
 
-The `offset` parameter controls the offset X(for horizontal) or the offset Y(for vertical) of the layout. This library provides a `CarouselController` to help you drive the animation.
+The `offset` parameter controls the offset X (for horizontal) or the offset Y (for vertical) of the layout. The library provides a `CarouselController` to help you drive the animation.
 
 ```swift
 import Carousel
@@ -63,7 +63,7 @@ let offset = controller.offset
 controller.stopAnimation()
 ```
 
-By default, `CarouselController` uses `CADispalyLink` based method to drive the animation, you can also provide your own implementation, by conforming to `DisplaySyncer` protocol and pass it to the initializer of `CarouselController`. See the initializer of `CarouselController` for more details.
+By default, `CarouselController` uses `CADispalyLink` based method to drive the animation, you can also provide your own implementation by conforming to `DisplaySyncer` protocol and pass it to the initializer of `CarouselController`. See the initializer of `CarouselController` for more details.
 
 To animate switching orientation of the `CarouselView`, you can simply declare the orientation as a state and change it within an animation transaction:
 
